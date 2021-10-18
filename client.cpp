@@ -19,14 +19,29 @@ const char *COMMANDS[4] = {"translator", "currency", "voting", "exit"};
 
 void translator(int sock)
 {
+    char buffer[MAX_MESSAGE_LENGTH];
     while (1)
     {
         // prompt user to enter word to translate or exit
-        printf("\nPlease type the word that you would like to be translated,\nor type 'exit' to quit translator\n");
+        printf("\nEnter an English word,\nor type 'exit' to quit translator\n");
 
         // get word
         string input;
-        getline(cin, input);
+        cin >> input;
+        printf("\nThe input is:\n%s\n", input.c_str());
+
+        // Append input word to service key
+        string mssg = "1 ";
+        mssg.append(input);
+        printf("\nThe mssg: %s", mssg.c_str());
+
+        // send SERVICE KEY + word to sock
+        if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+        {
+            printf("send() call failed\n");
+            return;
+        }
+        printf("\nInput sent to server\n\n........................\n\n");
 
         // if word is "exit"
         if (strncmp(input.c_str(), "exit", 4) == 0)
@@ -35,24 +50,17 @@ void translator(int sock)
             return;
         }
 
-        // Append input word to service key
-        string mssg = "TRNS ";
-        mssg.append(input);
-        printf("\nThe mssg: %s", mssg);
-
-        // send SERVICE KEY + word to sock
-        if (send(localSocket, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+        int n;
+        if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
         {
-            printf("send() call failed\n");
-            return -1;
+            buffer[n] = '\0';
+            printf("Bytes returned: %d", n);
+            printf("\nFrench translation: %s\n", buffer);
         }
-        printf("\nInput sent to server\n\n........................\n\n");
-        //      if (recv response):
-        //          if success:
-        //              print translated word
-        //          if no good:
-        //              print error message
-        //      end
+        else
+        {
+            printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        }
     }
 }
 
@@ -61,7 +69,7 @@ int main()
 
     struct sockaddr_in serverAddress;
     int localSocket;
-    char output[1024];
+    //char output[1024];
 
     //get IP and PORT from command line
 
@@ -80,40 +88,54 @@ int main()
         printf("socket() call failed\n");
         return -1;
     }
-    while (1)
-    {
-        // Connection request
-        if (connect(localSocket, (struct sockaddr *)&serverAddress, sizeof(struct sockaddr_in)) == -1)
-        {
-            printf("connect() call failed\n");
-            return -1;
-        }
-        printf("Before while loop");
-        //start while loop to check for input
-        while (1)
-        {
-            // request user to select microservice
-            printf("\n\nPlease type one of the following commands:\n\nADD ____\nDEL ____\nBYE\n\n");
-            string input;
-            getline(cin, input);
-            printf("\nThe input is:\n%s\n", input.c_str());
 
-            // switch for determining which service to call
-            // 1: TRANSLATOR
-            //      translator(localSocket)
-            // 2: CURRENCY
-            //      currency(localSocket)
-            // 3: VOTING
-            //      voting(localSocket)
-            // 4: EXIT
-            //      break out of loop
-            // 5: DEFAULT
-            //      Error message, invalid request
+    printf("\nWaiting for connection\n");
+    // Connection request
+    if (connect(localSocket, (struct sockaddr *)&serverAddress, sizeof(struct sockaddr_in)) == -1)
+    {
+        printf("connect() call failed\n");
+        return -1;
+    }
+    printf("Before while loop");
+
+    //start while loop to check for input
+    int running = 1;
+    while (running)
+    {
+        // request user to select microservice
+        printf("\n\nPlease type one of the following commands:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
+        int input;
+        cin >> input;
+        printf("\nThe input is:\n%d\n", input);
+
+        // switch for determining which service to call
+        switch (input)
+        {
+        case 1:
+            printf("\nSelected translator!\n");
+            translator(localSocket);
+            break;
+        case 2:
+            printf("\nSelected currency!\n");
+            // currency(localSocket)
+            break;
+        case 3:
+            printf("\nSelected voting!\n");
+            // voting(localSocket)
+            break;
+        case 4:
+            printf("\nSelected EXIT!\n");
+            running = 0;
+            break;
+        default:
+            printf("\nInvalid request....\n");
+            break;
         }
     }
 
     // Connection termination
     close(localSocket);
+    printf("\nSAFELY TERMINATING CLIENT APPLICATION, BYE!\n");
 
     return 0;
 }
