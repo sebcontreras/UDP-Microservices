@@ -67,14 +67,15 @@ void translator(int sock)
 void currency(int sock)
 {
     char buffer[MAX_MESSAGE_LENGTH];
+    cin.ignore();
     while (1)
     {
         // prompt user to enter word to translate or exit
-        printf("\nEnter a currency to convert using format:\n $<amount> <source> <dest>\n\n (type 'exit' to quit currency)\n");
+        printf("\nEnter a currency to convert using format:\n   $<amount> <source> <dest>\n   ex. $10 CAD US\n\n(type 'exit' to quit currency)\n");
 
         // get data
         string input;
-        cin.ignore();
+        cin.clear();
         getline(cin, input);
         printf("\nThe input is:\n%s\n", input.c_str());
 
@@ -94,7 +95,7 @@ void currency(int sock)
         // if word is "exit"
         if (strncmp(input.c_str(), "exit", 4) == 0)
         {
-            printf("\nLeaving translator microservice...");
+            printf("\nLeaving currency microservice...");
             return;
         }
 
