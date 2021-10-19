@@ -14,11 +14,17 @@ using namespace std;
 #define MAXLINE 1024
 #define CURR_LENGTH 7
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
+#define WRONG_FORM "WRONG FORMAT! Please ensure your request is in the following format: $<amount> <source> <dest>"
 
 // Exchange rates taken on October 18, 2021 19:05:00
 const string CURRENCIES[CURR_LENGTH] = {"USD", "CAD", "EUR", "GBP", "BTC", "ETH", "DOGE"};
 const double CONVERSION_RATES[CURR_LENGTH] = {1, 1.24, 0.86, 0.73, 0.000016, 0.00027, 3.95};
 const string CURRENCY_SYMBOL[CURR_LENGTH] = {"$", "$", "€", "£", "₿", "Ξ", "Đ"};
+
+bool isNums(const string &str)
+{
+    return str.find_first_not_of("0123456789") == string::npos;
+}
 
 string getExchangeCurrency(string rawData)
 {
@@ -26,23 +32,31 @@ string getExchangeCurrency(string rawData)
     printf("\nThe raw data:%s", rawData.c_str());
     string result;
 
+    // NEED BETTER PARSING CHECKERS
+
     // Parse money
     int fSpace = rawData.find(" ");
     if (fSpace == -1)
     {
-        result = "WRONG FORMAT! Please ensure your request is in the following format: $<amount> <source> <dest> ";
+        result = WRONG_FORM;
         printf("\n%s\n", result.c_str());
         return result;
     }
     string strMoney = rawData.substr(1, fSpace - 1);
-    double money = std::stoi(strMoney);
-    printf("\nmoney is: %f", money);
+    if (!isNums(strMoney))
+    {
+        result = "AHHHHHHH";
+        printf("\n%s\n", result.c_str());
+        return result;
+    }
+    long double money = std::stoi(strMoney);
+    printf("\nmoney is: %Lf", money);
 
     // Parse source
     int sSpace = rawData.find(" ", fSpace + 1);
     if (sSpace == -1)
     {
-        result = "WRONG FORMAT! Please ensure your request is in the following format: $<amount> <source> <dest> ";
+        result = WRONG_FORM;
         printf("\n%s\n", result.c_str());
         return result;
     }
@@ -56,7 +70,7 @@ string getExchangeCurrency(string rawData)
     // if any of the data is missing, send try again message
     if (money <= 0 || src.empty() || dest.empty() || fSpace == -1 || sSpace == -1)
     {
-        result = "WRONG FORMAT! Please ensure your request is in the following format: $<amount> <source> <dest> ";
+        result = WRONG_FORM;
         printf("\n%s\n", result.c_str());
         return result;
     }
@@ -88,16 +102,16 @@ string getExchangeCurrency(string rawData)
     // If match not found, return error message
     if (found < 2)
     {
-        result = "Currency NOT found, supported currencies are; USD, CAD, EUR, GBP, BTC, ETH, DOGE";
+        result = "Currency NOT found, supported currencies are: USD, CAD, EUR, GBP, BTC, ETH, DOGE";
         printf("\n%s\n", result.c_str());
         return result;
     }
 
     // Convert money to USD, then convert to dest
     // (USD/SRC) * DEST * money
-    double conMoney = ((CONVERSION_RATES[0] / CONVERSION_RATES[srcIn]) * CONVERSION_RATES[destIn] * money);
+    long double conMoney = ((CONVERSION_RATES[0] / CONVERSION_RATES[srcIn]) * CONVERSION_RATES[destIn] * money);
     string finMoney = to_string(conMoney);
-    printf("\n%f %s = %f %s", money, src.c_str(), conMoney, dest.c_str());
+    printf("\n%Lf %s = %Lf %s", money, src.c_str(), conMoney, dest.c_str());
 
     // Prepare result string
     // $10 USD = *8.06 BPD

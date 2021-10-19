@@ -71,8 +71,8 @@ void currency(int sock)
     while (1)
     {
         // prompt user to enter word to translate or exit
-        printf("\nEnter a currency to convert using format:\n   $<amount> <source> <dest>\n   ex. $10 CAD US\n\n(type 'exit' to quit currency)\n");
-
+        printf("\nEnter a currency to convert using format:\n   $<amount> <source> <dest>\n   ex. $10 CAD USD\n\n(type 'exit' to quit currency)\n");
+        printf("\nSupported Currencies: USD, CAD, EUR, GBP, BTC, ETH, DOGE\n\n");
         // get data
         string input;
         cin.clear();
