@@ -17,6 +17,7 @@ using namespace std;
 
 #define PORT 12345
 #define TPORT 6767
+#define CPORT 5454
 #define MAXLINE 1024
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
@@ -51,7 +52,6 @@ void translator(int clientSocket, string clientWord)
     string eWord = clientWord;
     char buffer[MAXLINE];
     char bufferServer[MAXLINE];
-    char *hello = "Hello from client";
     struct sockaddr_in servaddr;
 
     // Creating socket file descriptor
@@ -118,6 +118,78 @@ void translator(int clientSocket, string clientWord)
     close(UDPsock);
 }
 
+void currency(int clientSocket, string currencyDat)
+{
+    int UDPsock;
+    string requestDat = currencyDat;
+    char buffer[MAXLINE];
+    char bufferServer[MAXLINE];
+    struct sockaddr_in servaddr;
+
+    // Creating socket file descriptor
+    if ((UDPsock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&servaddr, 0, sizeof(servaddr));
+
+    // Filling server information
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(CPORT);
+    servaddr.sin_addr.s_addr = INADDR_ANY;
+
+    // if requestDat is "exit", leave the loop
+    while (strncmp(requestDat.c_str(), "exit", 4) != 0)
+    {
+        int n, len;
+        // Send data to UDP service
+        sendto(UDPsock, requestDat.c_str(), strlen(requestDat.c_str()),
+               MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+               sizeof(servaddr));
+        printf("Message sent to UDP Currency service: %s\n", requestDat.c_str());
+
+        // Get response from UDP service
+        n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                     MSG_WAITALL, (struct sockaddr *)&servaddr,
+                     (socklen_t *)&len);
+        buffer[n] = '\0';
+        printf("Response from UDP Currency service: %s\n", buffer);
+
+        // Parse response
+
+        // Send translated word back to TCP client
+        if (send(clientSocket, buffer, n, 0) == -1)
+        {
+            printf("send() call failed\n");
+            return;
+        }
+        printf("\nSent translated word back to client: %s\n\n........................\n\n", buffer);
+
+        // Here we should get response from TCP
+        int bytes;
+        if ((bytes = recv(clientSocket, bufferServer, MAXLINE - 1, 0)) > 0)
+        {
+            printf("Loop response from TCP client: %s\n", bufferServer);
+
+            // Get data
+            char bufferCopy[sizeof(bufferServer)];
+            strcpy(bufferCopy, bufferServer);
+            char tempData[bytes - 2];
+            strncpy(tempData, bufferCopy + 2, bytes - 2);
+            string data(tempData);
+            printf("\nThe data is: %s", data.c_str());
+            printf("\nRunning currency function");
+
+            // Reset data with new request data
+            requestDat = data;
+        }
+    }
+    printf("\nClosing translator microservice...\n");
+    close(UDPsock);
+}
+
 int main(int argc, char const *argv[])
 {
     int parent_socket, client_socket;
@@ -157,7 +229,7 @@ int main(int argc, char const *argv[])
     // Listening
     char buffer1[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &client_address.sin_addr, buffer1, sizeof(buffer1));
-    printf("client_address:%s\n", buffer1);
+    printf("Server running at IP: %s on port: %d\n", buffer1, PORT);
     if (listen(parent_socket, 3) < 0)
     {
         perror("listen");
@@ -196,7 +268,7 @@ int main(int argc, char const *argv[])
 
             // Get data
             char tempData[clientBytes - 2];
-            strncpy(tempData, bufferCopy + 2, clientBytes - 2);
+            strncpy(tempData, bufferCopy + 2, 100);
             string data(tempData);
             printf("\nThe data is: %s", data.c_str());
             printf("\nCalling trans function");
@@ -210,7 +282,7 @@ int main(int argc, char const *argv[])
                 break;
             case 2:
                 printf("\nSelected currency!\n");
-                // currency(localSocket)
+                currency(client_socket, data);
                 break;
             case 3:
                 printf("\nSelected voting!\n");

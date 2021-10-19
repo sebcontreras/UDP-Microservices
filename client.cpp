@@ -64,6 +64,54 @@ void translator(int sock)
     }
 }
 
+void currency(int sock)
+{
+    char buffer[MAX_MESSAGE_LENGTH];
+    while (1)
+    {
+        // prompt user to enter word to translate or exit
+        printf("\nEnter a currency to convert using format:\n $<amount> <source> <dest>\n\n (type 'exit' to quit currency)\n");
+
+        // get data
+        string input;
+        cin.ignore();
+        getline(cin, input);
+        printf("\nThe input is:\n%s\n", input.c_str());
+
+        // Append input word to service key
+        string mssg = "2 ";
+        mssg.append(input);
+        printf("\nThe mssg: %s", mssg.c_str());
+
+        // send SERVICE KEY + word to sock
+        if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+        {
+            printf("send() call failed\n");
+            return;
+        }
+        printf("\nInput sent to server\n\n........................\n\n");
+
+        // if word is "exit"
+        if (strncmp(input.c_str(), "exit", 4) == 0)
+        {
+            printf("\nLeaving translator microservice...");
+            return;
+        }
+
+        int n;
+        if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+        {
+            buffer[n] = '\0';
+            printf("Bytes returned: %d", n);
+            printf("\nCurrency exchange: %s\n", buffer);
+        }
+        else
+        {
+            printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        }
+    }
+}
+
 int main()
 {
 
@@ -117,7 +165,7 @@ int main()
             break;
         case 2:
             printf("\nSelected currency!\n");
-            // currency(localSocket)
+            currency(localSocket);
             break;
         case 3:
             printf("\nSelected voting!\n");

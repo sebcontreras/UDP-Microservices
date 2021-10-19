@@ -63,6 +63,11 @@ int main()
         exit(EXIT_FAILURE);
     }
 
+    // Listening
+    char buffer1[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &servaddr.sin_addr, buffer1, sizeof(buffer1));
+    printf("Server running at IP: %s on port: %d\n", buffer1, PORT);
+
     int len, n;
 
     len = sizeof(cliaddr); //len is value/resuslt
