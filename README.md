@@ -19,6 +19,7 @@ X Voting: Show candidates
 
 BUGS:
 - Client fails when sending string command
+- Need send/recv loop for TCP to ensure all bytes are being sent (from ass1)
 
 
 TESTING:

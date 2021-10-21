@@ -17,15 +17,30 @@ using namespace std;
 const int canID[CAND_LENGTH] = {5678, 4444, 8981, 2442, 1298};
 const string canName[CAND_LENGTH] = {"Yuto", "Milton", "Shane", "Max", "Gifted"};
 
-string showCandidates()
+string showSummary(int *votes)
 {
-    string resp = "";
+    string resp = "ID             Name           Votes";
     for (int i = 0; i < CAND_LENGTH; i++)
     {
         resp.append("\n");
-        resp.append(canName[i]);
-        resp.append(": ");
         resp.append(to_string(canID[i]));
+        resp.append(" --------- ");
+        resp.append(canName[i]);
+        resp.append(" --------- ");
+        resp.append(to_string(votes[i]));
+    }
+    return resp;
+}
+
+string showCandidates()
+{
+    string resp = "ID             Name";
+    for (int i = 0; i < CAND_LENGTH; i++)
+    {
+        resp.append("\n");
+        resp.append(to_string(canID[i]));
+        resp.append(" --------- ");
+        resp.append(canName[i]);
     }
     return resp;
 }
@@ -98,7 +113,7 @@ int main()
             break;
         case 2:
             printf("\nSelected show voting summary!\n");
-            //showSummary(sock);
+            resp = showSummary(voteCount);
             break;
         case 3:
             printf("\nSelected get encryption key\n");

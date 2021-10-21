@@ -118,6 +118,35 @@ void currency(int sock)
     }
 }
 
+void showSummary(int sock)
+{
+    // Format request
+    string mssg = "3 2";
+    // send SERVICE KEY + request type "2"(get summary) to sock
+    if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+
+    printf("\nInput sent to server\n\n........................\n\n");
+
+    // get response
+    int n;
+    char buffer[MAX_MESSAGE_LENGTH];
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    {
+        buffer[n] = '\0';
+        printf("Bytes returned: %d", n);
+        printf("\n%s\n", buffer);
+    }
+    else
+    {
+        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
+    }
+    // Could maybe send confirmation back to Server
+}
+
 void showCandidates(int sock)
 {
     // Format request
@@ -174,7 +203,7 @@ void voting(int sock)
             break;
         case 2:
             printf("\nSelected show voting summary!\n");
-            //showSummary(sock);
+            showSummary(sock);
             break;
         case 3:
             printf("\nSelected voting!\n");

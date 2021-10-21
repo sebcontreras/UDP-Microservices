@@ -234,6 +234,40 @@ void showCandidates(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     // Here we could get CONFIRMATION response from TCP
 }
 
+void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
+{
+
+    int n, len;
+    char buffer[MAXLINE];
+    char bufferServer[MAXLINE];
+    // Send data to UDP service
+    string requestData = "2";
+
+    sendto(UDPsock, requestData.c_str(), strlen(requestData.c_str()),
+           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+           sizeof(servaddr));
+    printf("Message sent to UDP Voting service: %s\n", requestData.c_str());
+
+    // Get response from UDP service
+    n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                 MSG_WAITALL, (struct sockaddr *)&servaddr,
+                 (socklen_t *)&len);
+    buffer[n] = '\0';
+    printf("Response from UDP Voting service:\n%s\n", buffer);
+
+    // Parse response
+
+    // Send translated word back to TCP client
+    if (send(clientSocket, buffer, n, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+    printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
+
+    // Here we could get CONFIRMATION response from TCP
+}
+
 void voting(int clientSocket, string votDat)
 {
     // Create UDP socket for voting microservice
@@ -279,7 +313,7 @@ void voting(int clientSocket, string votDat)
         break;
     case 2:
         printf("\nSelected show voting summary!\n");
-        //showSummary(sock);
+        showSummary(clientSocket, UDPsock, servaddr);
         break;
     case 3:
         printf("\nSelected voting!\n");
