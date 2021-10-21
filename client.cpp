@@ -17,6 +17,11 @@ using namespace std;
 /* Global variable */
 const char *COMMANDS[4] = {"translator", "currency", "voting", "exit"};
 
+bool isNums(const string &str)
+{
+    return str.find_first_not_of("0123456789") == string::npos;
+}
+
 void translator(int sock)
 {
     char buffer[MAX_MESSAGE_LENGTH];
@@ -113,6 +118,80 @@ void currency(int sock)
     }
 }
 
+void showCandidates(int sock)
+{
+    // Format request
+    string mssg = "3 1";
+    // send SERVICE KEY + request type "1"(get candidates) to sock
+    if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+
+    printf("\nInput sent to server\n\n........................\n\n");
+
+    // get response
+    int n;
+    char buffer[MAX_MESSAGE_LENGTH];
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    {
+        buffer[n] = '\0';
+        printf("Bytes returned: %d", n);
+        printf("\n%s\n", buffer);
+    }
+    else
+    {
+        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
+    }
+    // Could maybe send confirmation back to Server
+}
+
+void voting(int sock)
+{
+    char buffer[MAX_MESSAGE_LENGTH];
+    cin.ignore();
+    int running = 1;
+    while (running)
+    {
+        // Prompt user to select voting type
+        printf("\n\nPlease type one of the following commands:\n\n1. Show candidates\n\n2. Show voting summary\n\n3. Vote\n\n4. BYE\n\n");
+        int input;
+        //cin.clear();
+        cin >> input;
+        printf("\nThe input is:\n%d\n", input);
+        if (!isNums(to_string(input)))
+        {
+            input = 0;
+        }
+
+        // switch for determining which service to call
+        switch (input)
+        {
+        case 1:
+            printf("\nSelected show candidates!\n");
+            showCandidates(sock);
+            break;
+        case 2:
+            printf("\nSelected show voting summary!\n");
+            //showSummary(sock);
+            break;
+        case 3:
+            printf("\nSelected voting!\n");
+            //castVote(sock);
+            break;
+        case 4:
+            printf("\nSelected EXIT!\n");
+            running = 0;
+            break;
+        default:
+            printf("\nInvalid request....\n");
+            break;
+        }
+    }
+    printf("\nLeaving voting microservice...\n");
+}
+
 int main()
 {
 
@@ -149,13 +228,19 @@ int main()
 
     //start while loop to check for input
     int running = 1;
+    //cin.ignore();
     while (running)
     {
         // request user to select microservice
         printf("\n\nPlease type one of the following commands:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
         int input;
+        //cin.clear();
         cin >> input;
         printf("\nThe input is:\n%d\n", input);
+        if (!isNums(to_string(input)))
+        {
+            input = 0;
+        }
 
         // switch for determining which service to call
         switch (input)
@@ -170,7 +255,7 @@ int main()
             break;
         case 3:
             printf("\nSelected voting!\n");
-            // voting(localSocket)
+            voting(localSocket);
             break;
         case 4:
             printf("\nSelected EXIT!\n");

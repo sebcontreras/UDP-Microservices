@@ -6,8 +6,8 @@ TO-DO:
 - Decimal places on currency exchange result
 X Convert all money vars to long double
 
-- Voting skeleton
-- Voting: Show candidates
+- Voting looping
+X Voting: Show candidates
 - Voting: Secure voting
 - Voting: Voting summary
 - Client-side voting
@@ -15,6 +15,10 @@ X Convert all money vars to long double
 - Server-side voting
 
 - Figure out how to get/print microservice IP
+    - Need to change Indirection server IP to school IP
+
+BUGS:
+- Client fails when sending string command
 
 
 TESTING:
