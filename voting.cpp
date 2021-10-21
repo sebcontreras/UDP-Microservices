@@ -45,6 +45,33 @@ string showCandidates()
     return resp;
 }
 
+string getKey()
+{
+    int r = rand() % 10;
+    string key = to_string(r);
+    return key;
+}
+
+string castVote(int *voteCount, string data)
+{
+    string resp;
+
+    // Get encrypted vote
+    printf("\nThe raw data is: %s", data);
+    // find first blank
+    int encVote = std::stoi(data);
+
+    // Get key
+
+    // Decrypt vote
+    int decVote = encVote / key;
+
+    // Update voteCount
+
+    // Prep confirmation message
+
+    return resp;
+}
 // Driver code
 int main()
 {
@@ -117,11 +144,17 @@ int main()
             break;
         case 3:
             printf("\nSelected get encryption key\n");
-            //getKey(sock);
+            resp = getKey();
             break;
         case 4:
             printf("\nSelected cast vote!\n");
-            //castVote(sock); //returns confirmation
+
+            // Get data
+            char tempData[n - 2];
+            strncpy(tempData, buffer + 2, 100);
+            string data(tempData);
+
+            resp = castVote(voteCount, data); //returns confirmation
             break;
         case 5:
             printf("\nSelected EXIT!\n");
@@ -132,7 +165,7 @@ int main()
             break;
         }
 
-        // Send french word to client
+        // Send resp to client
         sendto(sockfd, resp.c_str(), strlen(resp.c_str()),
                MSG_CONFIRM, (const struct sockaddr *)&cliaddr,
                len);

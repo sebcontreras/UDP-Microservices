@@ -118,6 +118,92 @@ void currency(int sock)
     }
 }
 
+void castVote(int sock)
+{
+    char buffer[MAX_MESSAGE_LENGTH];
+    char conBuffer[MAX_MESSAGE_LENGTH];
+
+    // Prompt user to select voting type
+    printf("\nPlease cast your vote by typing the selected candidate's ID: ");
+    int voteID;
+    //cin.clear();
+    cin >> voteID;
+    printf("\nThe vote is:\n%d\n", voteID);
+
+    // Format request
+    string mssg = "3 3 ";
+    mssg.append(to_string(voteID));
+
+    // Send voting request to server
+    // send SERVICE KEY + request type "3" (cast vote) to sock
+    if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+
+    printf("\nVoting request sent to server\n\n........................\n\n");
+
+    // Receive encryption key
+    int n;
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    {
+        buffer[n] = '\0';
+        printf("Bytes returned: %d", n);
+        printf("\n%s\n", buffer);
+    }
+    else
+    {
+        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
+    }
+
+    // Parse key
+    int key;
+    char tempKey[2];
+    strncpy(tempKey, buffer, 1);
+    tempKey[1] = '\0';
+    string keyString(tempKey);
+    if (!isNums(keyString))
+    {
+        printf("\nReceived encryption key was not an int...Please try again");
+        return;
+    }
+    printf("\ntempKey is: %s", tempKey);
+    key = std::stoi(tempKey);
+    printf("\nThe key is: %d", key);
+
+    // Encrypt vote
+    int cryptVoteNum = voteID * key;
+    string cryptVote = to_string(cryptVoteNum);
+    printf("\nThe encrypted vote is: %s", cryptVote.c_str());
+
+    // Format cast vote request
+    // We don't need the leading "3" here because we should already be in
+    // casVote loop on the server side
+    string voteReq = "4 ";
+    voteReq.append(cryptVote);
+
+    // Send encrypted vote
+    if (send(sock, voteReq.c_str(), strlen(voteReq.c_str()) + 1, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+
+    // Wait for confirmation
+    if ((n = read(sock, conBuffer, sizeof(conBuffer) - 1)) > 0)
+    {
+        conBuffer[n] = '\0';
+        // Need to string compare to validate message
+        printf("Bytes returned for confirmation: %d", n);
+        printf("\n%s\n", conBuffer);
+    }
+    else
+    {
+        printf("\nVoting confirmation not received!\nWe can't be sure that your vote was cast\n");
+    }
+}
+
 void showSummary(int sock)
 {
     // Format request
@@ -207,7 +293,7 @@ void voting(int sock)
             break;
         case 3:
             printf("\nSelected voting!\n");
-            //castVote(sock);
+            castVote(sock);
             break;
         case 4:
             printf("\nSelected EXIT!\n");

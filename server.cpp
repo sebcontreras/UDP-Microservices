@@ -200,15 +200,85 @@ void currency(int clientSocket, string currencyDat)
     close(UDPsock);
 }
 
+void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
+{
+    int n, clientBytes, len, con;
+    char keyBuffer[MAXLINE];
+    char confBuffer[MAXLINE];
+    char voteBuffer[MAXLINE];
+    string voteKey, encVote;
+
+    // 2: Send encryption key request to UDP service
+    string requestData = "3";
+    sendto(UDPsock, requestData.c_str(), strlen(requestData.c_str()),
+           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+           sizeof(servaddr));
+    printf("Encryption key request sent to UDP Voting service: %s\n", requestData.c_str());
+
+    // 3: Receive encryption key from UDP service
+    n = recvfrom(UDPsock, (char *)keyBuffer, MAXLINE,
+                 MSG_WAITALL, (struct sockaddr *)&servaddr,
+                 (socklen_t *)&len);
+    keyBuffer[n] = '\0';
+    voteKey(keyBuffer);
+    printf("\ncastVote: Response from UDP Voting service get key:\n%s\n", keyBuffer);
+    printf("castVote: Response from UDP Voting service voteKey:\n%s\n", voteKey.c_str());
+
+    // 4: Send key to TCP client
+    if (send(clientSocket, keyBuffer, n, 0) == -1)
+    {
+        printf("castVote: send() call failed\n");
+        return;
+    }
+
+    // 5: Receive encrypted vote from TCP client
+    if ((clientBytes = recv(clientSocket, voteBuffer, 2048, 0)) <= 0)
+    {
+        printf("recv() call failed");
+        return;
+    }
+    voteBuffer[clientBytes] = '\0';
+    encVote(voteBuffer);
+    printf("castVote: Response TCP encrypted vote:\n%s\n", voteBuffer);
+    printf("castVote: Response TCP encrypted encVote:\n%s\n", encVote.c_str());
+
+    // Format vote request: <service> <vote> <key> (eg. 4 4327894 8)
+    string voteReq = "";
+    voteReq.append(encVote);
+    voteReq.append(" ");
+    voteReq.append(voteKey);
+
+    // 6: Send encrypted vote with key to UDP service
+    sendto(UDPsock, voteReq.c_str(), strlen(voteReq.c_str()),
+           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+           sizeof(servaddr));
+    printf("Encryption key request sent to UDP Voting service: %s\n", voteReq.c_str());
+
+    // 7: Receive vote confirmation from UDP service
+    con = recvfrom(UDPsock, (char *)confBuffer, MAXLINE,
+                   MSG_WAITALL, (struct sockaddr *)&servaddr,
+                   (socklen_t *)&len);
+    confBuffer[con] = '\0';
+    printf("castVote: Response from UDP Voting service:\n%s\n", confBuffer);
+
+    // 8: Send vote confirmation to client
+    sendto(UDPsock, confBuffer.c_str(), strlen(confBuffer.c_str()),
+           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+           sizeof(servaddr));
+    printf("Voting confirmation sent to TCP client: %s\n", confBuffer.c_str());
+
+    printf("\nDONE CASTING VOTE...\n");
+}
+
 void showCandidates(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
 {
 
     int n, len;
     char buffer[MAXLINE];
     char bufferServer[MAXLINE];
+
     // Send data to UDP service
     string requestData = "1";
-
     sendto(UDPsock, requestData.c_str(), strlen(requestData.c_str()),
            MSG_CONFIRM, (const struct sockaddr *)&servaddr,
            sizeof(servaddr));
@@ -317,7 +387,7 @@ void voting(int clientSocket, string votDat)
         break;
     case 3:
         printf("\nSelected voting!\n");
-        //castVote(sock);
+        castVote(clientSocket, UDPsock, servaddr);
         break;
     case 4:
         printf("\nSelected EXIT!\n");
@@ -381,93 +451,97 @@ int main(int argc, char const *argv[])
     printf("Listening...\n");
 
     int clientBytes;
-
-    // Connection acceptance
-    if ((client_socket = accept(parent_socket, (struct sockaddr *)&client_address,
-                                (socklen_t *)&addrlen)) < 0)
-    {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
     while (1)
     {
-        printf("\nListening for client request...\n");
 
-        // Get initial response from client
-        if ((clientBytes = recv(client_socket, buffer, 2048, 0)) > 0)
+        // Connection acceptance
+        if ((client_socket = accept(parent_socket, (struct sockaddr *)&client_address,
+                                    (socklen_t *)&addrlen)) < 0)
         {
-            printf("recv() %d bytes from client:\n\n%s\n", clientBytes, buffer);
-            char bufferCopy[sizeof(buffer)];
-            strcpy(bufferCopy, buffer);
-
-            // We want to send the full request to voting service
-            // string reqBody(bufferCopy);
-            //      e.g, 1 hello, 2 10 CAD US, _______
-            //      serv = "1", data = "hello"
-
-            // Get service requested
-            int serv;
-            char tempServ[2];
-            strncpy(tempServ, bufferCopy, 1);
-            tempServ[1] = '\0';
-            printf("\ntempServ is: %s", tempServ);
-            serv = std::stoi(tempServ);
-            printf("\nThe command is: %d", serv);
-
-            // Get data
-            char tempData[clientBytes - 2];
-            strncpy(tempData, bufferCopy + 2, 100);
-            string data(tempData);
-            printf("\nThe data is: %s", data.c_str());
-            printf("\nCalling trans function");
-
-            // switch for determining which service to call
-            switch (serv)
-            {
-            case 1:
-                printf("\nSelected translator!\n");
-                translator(client_socket, data);
-                break;
-            case 2:
-                printf("\nSelected currency!\n");
-                currency(client_socket, data);
-                break;
-            case 3:
-                printf("\nSelected voting!\n");
-                voting(client_socket, data);
-                break;
-            case 4:
-                printf("\nSelected EXIT!\n");
-                break;
-            default:
-                printf("\nInvalid request....\n");
-                break;
-            }
-
-            // switch for determining which service to call
-            // 1: TRANSLATOR
-            //      translator(data)
-            // 2: CURRENCY
-            //      currency(data)
-            // 3: VOTING
-            //      voting(data)
-            // 4: EXIT //NOT SURE IF WE SHOULD BE ABLE TO KILL SERVER FROM CLIENT
-            //      break out of loop
-            // 5: DEFAULT
-            //      Error message, invalid request
-
-            // For each service we need to:
-            //      Set up UDP client-socket to send info to service
-            //      Send data to service
-            //      Get response from service
-            //      Parse response
-            //      return response
-            //      Send back to TCP client
-            //      Close UDP client-socket
+            perror("accept");
+            exit(EXIT_FAILURE);
         }
+        printf("\nConnected to client, listening for requests...\n");
+        int running = 1;
+        while (running)
+        {
+            // Get initial response from client
+            if ((clientBytes = recv(client_socket, buffer, 2048, 0)) > 0)
+            {
+                printf("recv() %d bytes from client:\n\n%s\n", clientBytes, buffer);
+                char bufferCopy[sizeof(buffer)];
+                strcpy(bufferCopy, buffer);
+
+                // We want to send the full request to voting service
+                // string reqBody(bufferCopy);
+                //      e.g, 1 hello, 2 10 CAD US, _______
+                //      serv = "1", data = "hello"
+
+                // Get service requested
+                int serv;
+                char tempServ[2];
+                strncpy(tempServ, bufferCopy, 1);
+                tempServ[1] = '\0';
+                printf("\ntempServ is: %s", tempServ);
+                serv = std::stoi(tempServ);
+                printf("\nThe command is: %d", serv);
+
+                // Get data
+                char tempData[clientBytes - 2];
+                strncpy(tempData, bufferCopy + 2, 100);
+                string data(tempData);
+                printf("\nThe data is: %s", data.c_str());
+                printf("\nCalling trans function");
+
+                // switch for determining which service to call
+                switch (serv)
+                {
+                case 1:
+                    printf("\nSelected translator!\n");
+                    translator(client_socket, data);
+                    break;
+                case 2:
+                    printf("\nSelected currency!\n");
+                    currency(client_socket, data);
+                    break;
+                case 3:
+                    printf("\nSelected voting!\n");
+                    voting(client_socket, data);
+                    break;
+                case 4:
+                    printf("\nSelected EXIT!\n");
+                    running = 0;
+                    break;
+                default:
+                    printf("\nInvalid request....\n");
+                    break;
+                }
+
+                // switch for determining which service to call
+                // 1: TRANSLATOR
+                //      translator(data)
+                // 2: CURRENCY
+                //      currency(data)
+                // 3: VOTING
+                //      voting(data)
+                // 4: EXIT //NOT SURE IF WE SHOULD BE ABLE TO KILL SERVER FROM CLIENT
+                //      break out of loop
+                // 5: DEFAULT
+                //      Error message, invalid request
+
+                // For each service we need to:
+                //      Set up UDP client-socket to send info to service
+                //      Send data to service
+                //      Get response from service
+                //      Parse response
+                //      return response
+                //      Send back to TCP client
+                //      Close UDP client-socket
+            }
+        }
+        printf("\nPROJECT EXIT WITH CODE 0\n");
+        close(client_socket);
     }
-    printf("\nPROJECT EXIT WITH CODE 0\n");
-    close(client_socket);
     close(parent_socket);
     return 0;
 }
