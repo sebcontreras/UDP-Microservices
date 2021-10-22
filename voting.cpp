@@ -17,7 +17,7 @@ using namespace std;
 const int canID[CAND_LENGTH] = {5678, 4444, 8981, 2442, 1298};
 const string canName[CAND_LENGTH] = {"Yuto", "Milton", "Shane", "Max", "Gifted"};
 
-string showSummary(int *votes)
+string showSummary(int votes[])
 {
     string resp = "ID             Name           Votes";
     for (int i = 0; i < CAND_LENGTH; i++)
@@ -52,23 +52,38 @@ string getKey()
     return key;
 }
 
-string castVote(int *voteCount, string data)
+string castVote(int voteCount[], string data)
 {
-    string resp;
+    // data is: 258582 8
+    string resp = "VOTE FAIL";
 
     // Get encrypted vote
-    printf("\nThe raw data is: %s", data);
-    // find first blank
-    int encVote = std::stoi(data);
+    printf("\nThe raw data is: %s", data.c_str());
+    int endEn = data.find(" ");
+    string encVoteStr = data.substr(0, endEn);
+    int encVote = std::stoi(encVoteStr);
+    printf("\nThe encrypted vote is: %d", encVote);
 
     // Get key
+    string keyStr = data.substr(endEn + 1, 1);
+    int key = std::stoi(keyStr);
+    printf("\nThe key is: %d", key);
 
     // Decrypt vote
     int decVote = encVote / key;
+    printf("\nThe decVote is: %d", decVote);
 
     // Update voteCount
-
-    // Prep confirmation message
+    for (int i = 0; i < CAND_LENGTH; i++)
+    {
+        if (canID[i] == decVote)
+        {
+            voteCount[i]++;
+            printf("VoteCount: %d", voteCount[i]);
+            resp = "VOTE SUCCESS!";
+            printf("\nVote count updated!");
+        }
+    }
 
     return resp;
 }
@@ -147,15 +162,14 @@ int main()
             resp = getKey();
             break;
         case 4:
+        {
             printf("\nSelected cast vote!\n");
-
-            // Get data
             char tempData[n - 2];
             strncpy(tempData, buffer + 2, 100);
             string data(tempData);
-
             resp = castVote(voteCount, data); //returns confirmation
             break;
+        }
         case 5:
             printf("\nSelected EXIT!\n");
             //running = 0;

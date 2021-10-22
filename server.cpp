@@ -22,7 +22,7 @@ using namespace std;
 #define MAXLINE 1024
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
-void sendToclient(const char *buff, int buffLength, int &client_sock)
+void sendToTCPclient(const char *buff, int buffLength, int &client_sock)
 {
 
     string temp;
@@ -67,9 +67,10 @@ void translator(int clientSocket, string clientWord)
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(TPORT);
-    // servaddr.sin_addr.s_addr = inet_addr("0.0.0.0");
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_addr.s_addr = inet_addr("136.159.5.25");
+    // servaddr.sin_addr.s_addr = INADDR_ANY;
     // 136.159.5.42 linuxlab
+    // 136.159.5.25 csx1 !!!!BINGO!!!!!
     // 136.159.5.41 from output
     // 172.19.2.145 first command line
     // 192.168.122.1 second command line
@@ -98,11 +99,12 @@ void translator(int clientSocket, string clientWord)
         // Parse response
 
         // Send translated word back to TCP client
-        if (send(clientSocket, buffer, n, 0) == -1)
-        {
-            printf("send() call failed\n");
-            return;
-        }
+        sendToTCPclient(buffer, n, clientSocket);
+        // if (send(clientSocket, buffer, n, 0) == -1)
+        // {
+        //     printf("send() call failed\n");
+        //     return;
+        // }
         printf("\nSent translated word back to client: %s\n\n........................\n\n", buffer);
 
         // Here we should get response from TCP
@@ -206,7 +208,6 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     char keyBuffer[MAXLINE];
     char confBuffer[MAXLINE];
     char voteBuffer[MAXLINE];
-    string voteKey, encVote;
 
     // 2: Send encryption key request to UDP service
     string requestData = "3";
@@ -220,7 +221,7 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
                  MSG_WAITALL, (struct sockaddr *)&servaddr,
                  (socklen_t *)&len);
     keyBuffer[n] = '\0';
-    voteKey(keyBuffer);
+    string voteKey(keyBuffer);
     printf("\ncastVote: Response from UDP Voting service get key:\n%s\n", keyBuffer);
     printf("castVote: Response from UDP Voting service voteKey:\n%s\n", voteKey.c_str());
 
@@ -238,7 +239,7 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
         return;
     }
     voteBuffer[clientBytes] = '\0';
-    encVote(voteBuffer);
+    string encVote(voteBuffer);
     printf("castVote: Response TCP encrypted vote:\n%s\n", voteBuffer);
     printf("castVote: Response TCP encrypted encVote:\n%s\n", encVote.c_str());
 
@@ -261,11 +262,13 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     confBuffer[con] = '\0';
     printf("castVote: Response from UDP Voting service:\n%s\n", confBuffer);
 
-    // 8: Send vote confirmation to client
-    sendto(UDPsock, confBuffer.c_str(), strlen(confBuffer.c_str()),
-           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
-           sizeof(servaddr));
-    printf("Voting confirmation sent to TCP client: %s\n", confBuffer.c_str());
+    // 8: Send vote confirmation to TCP client
+    if (send(clientSocket, confBuffer, strlen(confBuffer), 0) == -1)
+    {
+        printf("castVote: send() call failed\n");
+        return;
+    }
+    printf("Voting confirmation sent to TCP client: %s\n", confBuffer);
 
     printf("\nDONE CASTING VOTE...\n");
 }

@@ -19,7 +19,7 @@ X Voting: Show candidates
 
 BUGS:
 - Client fails when sending string command
-- Infinite loop after exit from client on server.cpp
+- Infinite loop after exit from client on server.cpp`
 - Need send/recv loop for TCP to ensure all bytes are being sent (from ass1)
 
 
