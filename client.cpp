@@ -10,7 +10,7 @@
 using namespace std;
 
 /* Global manifest constants */
-#define MAX_MESSAGE_LENGTH 100
+#define MAX_MESSAGE_LENGTH 2048
 // Need to get server IP and port from command line
 #define PORT 12345
 

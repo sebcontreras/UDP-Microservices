@@ -10,7 +10,7 @@
 using namespace std;
 
 #define PORT 6767
-#define MAXLINE 1024
+#define MAXLINE 2048
 #define CAND_LENGTH 5
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 

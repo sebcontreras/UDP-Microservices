@@ -8,14 +8,15 @@ X Convert all money vars to long double
 
 - Voting looping
 X Voting: Show candidates
-- Voting: Secure voting
-- Voting: Voting summary
-- Client-side voting
-- Service-side voting
-- Server-side voting
+X Voting: Secure voting
+X Voting: Voting summary
+X Client-side voting
+X Service-side voting
+X Server-side voting
 
-- Figure out how to get/print microservice IP
+X Figure out how to get/print microservice IP
     - Need to change Indirection server IP to school IP
+- Command line IP
 
 BUGS:
 - Client fails when sending string command

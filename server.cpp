@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <time.h>
 
 using namespace std;
 
@@ -19,7 +20,7 @@ using namespace std;
 #define TPORT 44111
 #define CPORT 5454
 #define VPORT 6767
-#define MAXLINE 1024
+#define MAXLINE 2048
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
 void sendToTCPclient(const char *buff, int buffLength, int &client_sock)
@@ -64,6 +65,12 @@ void translator(int clientSocket, string clientWord)
 
     memset(&servaddr, 0, sizeof(servaddr));
 
+    //Set timeout of 3s
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    setsockopt(UDPsock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(TPORT);
@@ -71,13 +78,6 @@ void translator(int clientSocket, string clientWord)
     // servaddr.sin_addr.s_addr = INADDR_ANY;
     // 136.159.5.42 linuxlab
     // 136.159.5.25 csx1 !!!!BINGO!!!!!
-    // 136.159.5.41 from output
-    // 172.19.2.145 first command line
-    // 192.168.122.1 second command line
-    // if (inet_pton(AF_INET, "136.159.5.41", &servaddr.sin_addr) == -1)
-    // {
-    //     printf("address creation failed\n");
-    // }
 
     // if Eword is "exit", leave the loop
     while (strncmp(eWord.c_str(), "exit", 4) != 0)
@@ -87,12 +87,16 @@ void translator(int clientSocket, string clientWord)
         sendto(UDPsock, eWord.c_str(), strlen(eWord.c_str()),
                MSG_CONFIRM, (const struct sockaddr *)&servaddr,
                sizeof(servaddr));
-        printf("Message sent to UDP Translator service: %s\n", eWord.c_str());
+        printf("\nMessage sent to UDP Translator service: %s\n", eWord.c_str());
 
         // Get response from UDP service
-        n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
-                     MSG_WAITALL, (struct sockaddr *)&servaddr,
-                     (socklen_t *)&len);
+        if ((n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                          MSG_WAITALL, (struct sockaddr *)&servaddr,
+                          (socklen_t *)&len)) < 0)
+        {
+            perror("\nError TIMEOUT");
+            return;
+        }
         buffer[n] = '\0';
         printf("Response from UDP Translator service: %s\n", buffer);
 
@@ -100,11 +104,7 @@ void translator(int clientSocket, string clientWord)
 
         // Send translated word back to TCP client
         sendToTCPclient(buffer, n, clientSocket);
-        // if (send(clientSocket, buffer, n, 0) == -1)
-        // {
-        //     printf("send() call failed\n");
-        //     return;
-        // }
+
         printf("\nSent translated word back to client: %s\n\n........................\n\n", buffer);
 
         // Here we should get response from TCP
@@ -147,6 +147,11 @@ void currency(int clientSocket, string currencyDat)
 
     memset(&servaddr, 0, sizeof(servaddr));
 
+    // Set timeout of 3s
+    struct timeval tv;
+    tv.tv_sec = 3;
+    setsockopt(UDPsock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(CPORT);
@@ -162,21 +167,23 @@ void currency(int clientSocket, string currencyDat)
                sizeof(servaddr));
         printf("Message sent to UDP Currency service: %s\n", requestDat.c_str());
 
+        setsockopt(UDPsock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
         // Get response from UDP service
-        n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
-                     MSG_WAITALL, (struct sockaddr *)&servaddr,
-                     (socklen_t *)&len);
+        if ((n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                          MSG_WAITALL, (struct sockaddr *)&servaddr,
+                          (socklen_t *)&len)) < 0)
+        {
+            perror("\nError TIMEOUT");
+            return;
+        }
         buffer[n] = '\0';
         printf("Response from UDP Currency service: %s\n", buffer);
 
         // Parse response
 
         // Send translated word back to TCP client
-        if (send(clientSocket, buffer, n, 0) == -1)
-        {
-            printf("send() call failed\n");
-            return;
-        }
+        sendToTCPclient(buffer, n, clientSocket);
         printf("\nSent translated word back to client: %s\n\n........................\n\n", buffer);
 
         // Here we should get response from TCP
@@ -226,14 +233,10 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("castVote: Response from UDP Voting service voteKey:\n%s\n", voteKey.c_str());
 
     // 4: Send key to TCP client
-    if (send(clientSocket, keyBuffer, n, 0) == -1)
-    {
-        printf("castVote: send() call failed\n");
-        return;
-    }
+    sendToTCPclient(keyBuffer, n, clientSocket);
 
     // 5: Receive encrypted vote from TCP client
-    if ((clientBytes = recv(clientSocket, voteBuffer, 2048, 0)) <= 0)
+    if ((clientBytes = recv(clientSocket, voteBuffer, MAXLINE, 0)) <= 0)
     {
         printf("recv() call failed");
         return;
@@ -263,11 +266,7 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("castVote: Response from UDP Voting service:\n%s\n", confBuffer);
 
     // 8: Send vote confirmation to TCP client
-    if (send(clientSocket, confBuffer, strlen(confBuffer), 0) == -1)
-    {
-        printf("castVote: send() call failed\n");
-        return;
-    }
+    sendToTCPclient(confBuffer, strlen(confBuffer), clientSocket);
     printf("Voting confirmation sent to TCP client: %s\n", confBuffer);
 
     printf("\nDONE CASTING VOTE...\n");
@@ -278,7 +277,6 @@ void showCandidates(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
 
     int n, len;
     char buffer[MAXLINE];
-    char bufferServer[MAXLINE];
 
     // Send data to UDP service
     string requestData = "1";
@@ -296,15 +294,10 @@ void showCandidates(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
 
     // Parse response
 
-    // Send translated word back to TCP client
-    if (send(clientSocket, buffer, n, 0) == -1)
-    {
-        printf("send() call failed\n");
-        return;
-    }
-    printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
+    // Send list back to TCP client
+    sendToTCPclient(buffer, n, clientSocket);
 
-    // Here we could get CONFIRMATION response from TCP
+    printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
 }
 
 void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
@@ -312,7 +305,6 @@ void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
 
     int n, len;
     char buffer[MAXLINE];
-    char bufferServer[MAXLINE];
     // Send data to UDP service
     string requestData = "2";
 
@@ -330,23 +322,16 @@ void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
 
     // Parse response
 
-    // Send translated word back to TCP client
-    if (send(clientSocket, buffer, n, 0) == -1)
-    {
-        printf("send() call failed\n");
-        return;
-    }
-    printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
+    // Send summary back to TCP client
+    sendToTCPclient(buffer, n, clientSocket);
 
-    // Here we could get CONFIRMATION response from TCP
+    printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
 }
 
 void voting(int clientSocket, string votDat)
 {
     // Create UDP socket for voting microservice
     int UDPsock;
-    char buffer[MAXLINE];
-    char bufferServer[MAXLINE];
     struct sockaddr_in servaddr;
 
     // Creating socket file descriptor
@@ -412,7 +397,7 @@ int main(int argc, char const *argv[])
     struct sockaddr_in client_address;
     int opt = 1;
     int addrlen = sizeof(client_address);
-    char buffer[2048] = {0};
+    char buffer[MAXLINE] = {0};
 
     printf("Hello from server!\n");
     // Creating socket file descriptor
@@ -469,7 +454,7 @@ int main(int argc, char const *argv[])
         while (running)
         {
             // Get initial response from client
-            if ((clientBytes = recv(client_socket, buffer, 2048, 0)) > 0)
+            if ((clientBytes = recv(client_socket, buffer, MAXLINE, 0)) > 0)
             {
                 printf("recv() %d bytes from client:\n\n%s\n", clientBytes, buffer);
                 char bufferCopy[sizeof(buffer)];
