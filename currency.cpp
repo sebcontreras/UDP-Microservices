@@ -45,7 +45,7 @@ string getExchangeCurrency(string rawData)
     string strMoney = rawData.substr(1, fSpace - 1);
     if (!isNums(strMoney))
     {
-        result = "AHHHHHHH";
+        result = WRONG_FORM;
         printf("\n%s\n", result.c_str());
         return result;
     }
@@ -111,17 +111,21 @@ string getExchangeCurrency(string rawData)
     // (USD/SRC) * DEST * money
     long double conMoney = ((CONVERSION_RATES[0] / CONVERSION_RATES[srcIn]) * CONVERSION_RATES[destIn] * money);
     string finMoney = to_string(conMoney);
+
+    // Get results to 2 decimal places
+    string roundedFinMoney = finMoney.substr(0, finMoney.find(".") + 3);
+    string roundedStrMoney = strMoney.substr(0, strMoney.find(".") + 3);
     printf("\n%Lf %s = %Lf %s", money, src.c_str(), conMoney, dest.c_str());
 
     // Prepare result string
     // $10 USD = *8.06 BPD
     result.append(CURRENCY_SYMBOL[srcIn]);
-    result.append(strMoney);
+    result.append(roundedStrMoney);
     result.append(" ");
     result.append(CURRENCIES[srcIn]);
     result.append(" = ");
     result.append(CURRENCY_SYMBOL[destIn]);
-    result.append(finMoney);
+    result.append(roundedFinMoney);
     result.append(" ");
     result.append(CURRENCIES[destIn]);
 
