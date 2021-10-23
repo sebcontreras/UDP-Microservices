@@ -13,7 +13,7 @@ using namespace std;
 /* Global manifest constants */
 #define MAX_MESSAGE_LENGTH 2048
 // Need to get server IP and port from command line
-#define PORT 12345
+#define PORT 54344
 
 /* Global variable */
 const char *COMMANDS[4] = {"translator", "currency", "voting", "exit"};

@@ -1,4 +1,6 @@
 // Server side C/C++ program to demonstrate Socket programming
+// 136.159.5.42 linuxlab
+// 136.159.5.25 csx1
 #include <unistd.h>
 #include <stdio.h>
 #include <string>
@@ -16,8 +18,8 @@
 
 using namespace std;
 
-#define PORT 12345
-#define TPORT 44111
+#define PORT 54344
+#define TPORT 44123
 #define CPORT 5454
 #define VPORT 6767
 #define MAXLINE 2048
@@ -48,7 +50,7 @@ void sendToTCPclient(const char *buff, int buffLength, int &client_sock)
     }
 }
 
-void translator(int clientSocket, string clientWord)
+void translator(int clientSocket, string clientWord, string IP)
 {
     int UDPsock;
     string eWord = clientWord;
@@ -74,10 +76,7 @@ void translator(int clientSocket, string clientWord)
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(TPORT);
-    servaddr.sin_addr.s_addr = inet_addr("136.159.5.25");
-    // servaddr.sin_addr.s_addr = INADDR_ANY;
-    // 136.159.5.42 linuxlab
-    // 136.159.5.25 csx1 !!!!BINGO!!!!!
+    servaddr.sin_addr.s_addr = inet_addr(IP.c_str());
 
     // if Eword is "exit", leave the loop
     while (strncmp(eWord.c_str(), "exit", 4) != 0)
@@ -130,7 +129,7 @@ void translator(int clientSocket, string clientWord)
     close(UDPsock);
 }
 
-void currency(int clientSocket, string currencyDat)
+void currency(int clientSocket, string currencyDat, string IP)
 {
     int UDPsock;
     string requestDat = currencyDat;
@@ -156,7 +155,7 @@ void currency(int clientSocket, string currencyDat)
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(CPORT);
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_addr.s_addr = inet_addr(IP.c_str());
 
     // if requestDat is "exit", leave the loop
     while (strncmp(requestDat.c_str(), "exit", 4) != 0)
@@ -345,7 +344,7 @@ void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("\nSent candidate list back to client: %s\n\n........................\n\n", buffer);
 }
 
-void voting(int clientSocket, string votDat)
+void voting(int clientSocket, string votDat, string IP)
 {
     // Create UDP socket for voting microservice
     int UDPsock;
@@ -369,7 +368,7 @@ void voting(int clientSocket, string votDat)
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(VPORT);
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_addr.s_addr = inet_addr(IP.c_str());
 
     // votDat should have the PARSED request
     // (first char is not microservice ID)
@@ -421,8 +420,15 @@ int main(int argc, char const *argv[])
     int opt = 1;
     int addrlen = sizeof(client_address);
     char buffer[MAXLINE] = {0};
+    string IP = "0.0.0.0";
 
-    printf("Hello from server!\n");
+    if (argc > 1)
+    {
+        string cl(argv[1]);
+        IP = cl;
+    }
+    printf("\nThe IP address of the microservices is: %s\n", IP.c_str());
+
     // Creating socket file descriptor
     if ((parent_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
@@ -446,14 +452,14 @@ int main(int argc, char const *argv[])
     if (bind(parent_socket, (struct sockaddr *)&client_address,
              sizeof(client_address)) < 0)
     {
-        perror("bind failed");
+        perror("server bind failed");
         exit(EXIT_FAILURE);
     }
 
     // Listening
     char buffer1[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &client_address.sin_addr, buffer1, sizeof(buffer1));
-    printf("Server running at IP: %s on port: %d\n", buffer1, PORT);
+    printf("Indirection Server running at IP: %s on port: %d\n", buffer1, PORT);
     if (listen(parent_socket, 3) < 0)
     {
         perror("listen");
@@ -477,7 +483,7 @@ int main(int argc, char const *argv[])
         while (running)
         {
             // Get initial response from client
-            if ((clientBytes = recv(client_socket, buffer, MAXLINE, 0)) > 0)
+            if ((clientBytes = recv(client_socket, buffer, MAXLINE - 1, 0)) > 0)
             {
                 printf("recv() %d bytes from client:\n\n%s\n", clientBytes, buffer);
                 char bufferCopy[sizeof(buffer)];
@@ -499,7 +505,7 @@ int main(int argc, char const *argv[])
 
                 // Get data
                 char tempData[clientBytes - 2];
-                strncpy(tempData, bufferCopy + 2, 100);
+                strncpy(tempData, bufferCopy + 2, MAXLINE - 1);
                 string data(tempData);
                 printf("\nThe data is: %s", data.c_str());
                 printf("\nCalling trans function");
@@ -509,15 +515,15 @@ int main(int argc, char const *argv[])
                 {
                 case 1:
                     printf("\nSelected translator!\n");
-                    translator(client_socket, data);
+                    translator(client_socket, data, IP);
                     break;
                 case 2:
                     printf("\nSelected currency!\n");
-                    currency(client_socket, data);
+                    currency(client_socket, data, IP);
                     break;
                 case 3:
                     printf("\nSelected voting!\n");
-                    voting(client_socket, data);
+                    voting(client_socket, data, IP);
                     break;
                 case 4:
                     printf("\nSelected EXIT!\n");
@@ -527,32 +533,12 @@ int main(int argc, char const *argv[])
                     printf("\nInvalid request....\n");
                     break;
                 }
-
-                // switch for determining which service to call
-                // 1: TRANSLATOR
-                //      translator(data)
-                // 2: CURRENCY
-                //      currency(data)
-                // 3: VOTING
-                //      voting(data)
-                // 4: EXIT //NOT SURE IF WE SHOULD BE ABLE TO KILL SERVER FROM CLIENT
-                //      break out of loop
-                // 5: DEFAULT
-                //      Error message, invalid request
-
-                // For each service we need to:
-                //      Set up UDP client-socket to send info to service
-                //      Send data to service
-                //      Get response from service
-                //      Parse response
-                //      return response
-                //      Send back to TCP client
-                //      Close UDP client-socket
             }
         }
-        printf("\nPROJECT EXIT WITH CODE 0\n");
+        printf("\nClient connection closed!\n");
         close(client_socket);
     }
     close(parent_socket);
+    printf("\nINDIRECTION SERVER EXIT WITH CODE 0\n");
     return 0;
 }
