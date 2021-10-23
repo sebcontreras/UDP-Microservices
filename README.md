@@ -23,6 +23,11 @@ where <microservices IP address> is the IP address where your microservices will
     - ./client <server IP address>
  where <server IP address> is the IP of the machine running server.cpp. If your server is running on the same machine as client, you can leave this field blank or specify "0.0.0.0". If the argument field is left blank, default IP is "0.0.0.0".
 
+ HOW TO USE:
+ All interactions are done through the client terminal. Please follow the prompts on screen and the app will work smoothly! Inputs must be in the correct format. If an input error is made, the client will be informed. However, if you do run into an error, restarting the server and the client should fix it.
+
+ If you find that your requests keep on timing out, ensure that the microservices are running and the IP address is correct.
+
  FEATURES:
 - Able to switch between services without any crashes as long as correct format was used when selecting services (see KNOWN BUGS).
 - If client is exited gracefully using the correct command, the server will be notified and drop the client without having to close the server. This means that you can rerun the client and reconnect to the server without having to restart the server.
