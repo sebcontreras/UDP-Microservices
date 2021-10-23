@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string.h>
 #include <arpa/inet.h>
+#include <cstring>
 
 using namespace std;
 
@@ -306,6 +307,20 @@ void voting(int sock)
     printf("\nLeaving voting microservice...\n");
 }
 
+void closeCon(int sock)
+{
+    // Format request
+    string mssg = "4 1";
+    // send SERVICE KEY + request type "4"(Close connection) to sock
+    if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
+    {
+        printf("send() call failed\n");
+        return;
+    }
+
+    printf("\nInput sent to server\n\n........................\n\n");
+}
+
 int main()
 {
 
@@ -379,6 +394,7 @@ int main()
             break;
         case 4:
             printf("\nSelected EXIT!\n");
+            closeCon(localSocket);
             running = 0;
             break;
         default:

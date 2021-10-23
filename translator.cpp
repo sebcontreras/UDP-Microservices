@@ -6,10 +6,11 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <cstring>
 
 using namespace std;
 
-#define PORT 6767
+#define PORT 44111
 #define MAXLINE 1024
 #define TRANS_LENGTH 5
 #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
