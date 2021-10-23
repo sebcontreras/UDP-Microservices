@@ -23,13 +23,17 @@ where <microservices IP address> is the IP address where your microservices will
     - ./client <server IP address>
  where <server IP address> is the IP of the machine running server.cpp. If your server is running on the same machine as client, you can leave this field blank or specify "0.0.0.0". If the argument field is left blank, default IP is "0.0.0.0".
 
+ FEATURES:
+- Able to switch between services without any crashes as long as correct format was used when selecting services (see KNOWN BUGS).
+- If client is exited gracefully using the correct command, the server will be notified and drop the client without having to close the server. This means that you can rerun the client and reconnect to the server without having to restart the server.
+- Able to get exchange rate between any of the listed currencies, not just CAD
+- 3s TIMEOUT: If Indirection Server does not get a response from a microservice after 3s, the request will fail, the client will be notified, and the server will go back to waiting for a new request.
+
 TESTING SPECIFICATIONS:
 - Tested on a 2018 Macbook Pro
 - On Mac, the "MSG_CONFIRM" does not exist, so I had to define it myself in order to run local tests. When testing over LINUX (and in the submitted project files), I commented out this field.
 - Ran on Linux over SSH
 - Ran on local network and also on SSH [csx1.cpsc.ucalgary.ca] (compiled and ran fine on this!)
-- Able to switch between services without any crashes as long as correct format was used when selecting services (see KNOWN BUGS).
-- If client is exited gracefully using the correct command, the server will be notified and drop the client without having to close the server. This means that you can rerun the client and reconnect to the server without having to restart the server.
 
 TESTS:
 
