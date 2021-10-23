@@ -18,17 +18,25 @@ using namespace std;
 const int canID[CAND_LENGTH] = {5678, 4444, 8981, 2442, 1298};
 const string canName[CAND_LENGTH] = {"Yuto", "Milton", "Shane", "Max", "Gifted"};
 
-string showSummary(int votes[])
+string showSummary(int votes[], int &hasVoted)
 {
-    string resp = "ID             Name           Votes";
-    for (int i = 0; i < CAND_LENGTH; i++)
+    string resp;
+    if (hasVoted)
     {
-        resp.append("\n");
-        resp.append(to_string(canID[i]));
-        resp.append(" --------- ");
-        resp.append(canName[i]);
-        resp.append(" --------- ");
-        resp.append(to_string(votes[i]));
+        resp = "ID             Name           Votes";
+        for (int i = 0; i < CAND_LENGTH; i++)
+        {
+            resp.append("\n");
+            resp.append(to_string(canID[i]));
+            resp.append(" --------- ");
+            resp.append(canName[i]);
+            resp.append(" --------- ");
+            resp.append(to_string(votes[i]));
+        }
+    }
+    else
+    {
+        resp = "You need to vote first before you can see the results!";
     }
     return resp;
 }
@@ -53,7 +61,7 @@ string getKey()
     return key;
 }
 
-string castVote(int voteCount[], string data)
+string castVote(int voteCount[], string data, int &hasVoted)
 {
     // data is: 258582 8
     string resp = "VOTE FAIL";
@@ -76,6 +84,7 @@ string castVote(int voteCount[], string data)
         if (canID[i] == decVote)
         {
             voteCount[i]++;
+            hasVoted = 1;
             resp = "VOTE SUCCESS!";
             printf("\nVote count updated!");
         }
@@ -90,6 +99,7 @@ int main()
     char buffer[MAXLINE];
     struct sockaddr_in servaddr, cliaddr;
     int voteCount[CAND_LENGTH] = {142, 23, 207, 52, 10};
+    int hasVoted = 0;
 
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -148,7 +158,7 @@ int main()
             break;
         case 2:
             printf("\nSelected show voting summary!\n");
-            resp = showSummary(voteCount);
+            resp = showSummary(voteCount, hasVoted);
             break;
         case 3:
             printf("\nSelected get encryption key\n");
@@ -160,7 +170,11 @@ int main()
             char tempData[n - 2];
             strncpy(tempData, buffer + 2, n - 2);
             string data(tempData);
-            resp = castVote(voteCount, data); //returns confirmation
+            resp = "Sorry, you can only vote once";
+            if (!hasVoted)
+            {
+                resp = castVote(voteCount, data, hasVoted); //returns confirmation
+            }
             break;
         }
         case 5:

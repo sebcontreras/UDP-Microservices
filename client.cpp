@@ -49,7 +49,7 @@ void translator(int sock)
         // if word is "exit"
         if (strncmp(input.c_str(), "exit", 4) == 0)
         {
-            printf("\nLeaving translator microservice...");
+            printf("\nExiting translator microservice...");
             return;
         }
 
@@ -61,7 +61,7 @@ void translator(int sock)
         else
         {
             buffer[n] = '\0';
-            printf("\nFrench translation: %s\n", buffer);
+            printf("\nEnglish word: %s\nFrench translation: %s\n", input.c_str(), buffer);
         }
     }
 }
@@ -79,12 +79,10 @@ void currency(int sock)
         string input;
         cin.clear();
         getline(cin, input);
-        printf("\nThe input is:\n%s\n", input.c_str());
 
         // Append input word to service key
         string mssg = "2 ";
         mssg.append(input);
-        printf("\nThe mssg: %s", mssg.c_str());
 
         // send SERVICE KEY + word to sock
         if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
@@ -92,7 +90,6 @@ void currency(int sock)
             printf("send() call failed\n");
             return;
         }
-        printf("\nInput sent to server\n\n........................\n\n");
 
         // if word is "exit"
         if (strncmp(input.c_str(), "exit", 4) == 0)
@@ -109,7 +106,6 @@ void currency(int sock)
         else
         {
             buffer[n] = '\0';
-            printf("Bytes returned: %d", n);
             printf("\nCurrency exchange: %s\n", buffer);
         }
     }
@@ -125,7 +121,6 @@ void castVote(int sock)
     int voteID;
     //cin.clear();
     cin >> voteID;
-    printf("\nThe vote is:\n%d\n", voteID);
 
     // Format request
     string mssg = "3 3 ";
@@ -149,7 +144,6 @@ void castVote(int sock)
     else
     {
         buffer[n] = '\0';
-        printf("\n%s\n", buffer);
     }
 
     // Parse key
@@ -206,8 +200,6 @@ void showSummary(int sock)
         return;
     }
 
-    printf("\nInput sent to server\n\n........................\n\n");
-
     // get response
     int n;
     char buffer[MAX_MESSAGE_LENGTH];
@@ -258,7 +250,6 @@ void voting(int sock)
         int input;
         //cin.clear();
         cin >> input;
-        printf("\nThe input is:\n%d\n", input);
         if (!isNums(to_string(input)))
         {
             input = 0;
@@ -288,7 +279,7 @@ void voting(int sock)
             break;
         }
     }
-    printf("\nLeaving voting microservice...\n");
+    printf("\nExiting voting microservice...\n");
 }
 
 void closeCon(int sock)
@@ -358,7 +349,6 @@ int main(int argc, char const *argv[])
         printf("\n\nPlease type the number corresponding to your desired command:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
         int input;
         cin >> input;
-        printf("\nThe input is:\n%d\n", input);
         if (!isNums(to_string(input)))
         {
             input = 0;

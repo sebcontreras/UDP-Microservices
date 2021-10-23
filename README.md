@@ -29,10 +29,12 @@ where <microservices IP address> is the IP address where your microservices will
  If you find that your requests keep on timing out, ensure that the microservices are running and the IP address is correct.
 
  FEATURES:
+ - All mandatory features
 - Able to switch between services without any crashes as long as correct format was used when selecting services (see KNOWN BUGS).
 - If client is exited gracefully using the correct command, the server will be notified and drop the client without having to close the server. This means that you can rerun the client and reconnect to the server without having to restart the server.
 - Able to get exchange rate between any of the listed currencies, not just CAD
 - 3s TIMEOUT: If Indirection Server does not get a response from a microservice after 3s, the request will fail, the client will be notified, and the server will go back to waiting for a new request.
+- A client can only vote once
 
 TESTING SPECIFICATIONS:
 - Tested on a 2018 Macbook Pro
