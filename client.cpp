@@ -56,15 +56,15 @@ void translator(int sock)
         }
 
         int n;
-        if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+        if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
+        {
+            perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        }
+        else
         {
             buffer[n] = '\0';
             printf("Bytes returned: %d", n);
             printf("\nFrench translation: %s\n", buffer);
-        }
-        else
-        {
-            printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
         }
     }
 }
@@ -105,15 +105,15 @@ void currency(int sock)
         }
 
         int n;
-        if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+        if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
+        {
+            perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        }
+        else
         {
             buffer[n] = '\0';
             printf("Bytes returned: %d", n);
             printf("\nCurrency exchange: %s\n", buffer);
-        }
-        else
-        {
-            printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
         }
     }
 }
@@ -146,15 +146,16 @@ void castVote(int sock)
 
     // Receive encryption key
     int n;
-    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
+    {
+        perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        return;
+    }
+    else
     {
         buffer[n] = '\0';
         printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
-    }
-    else
-    {
-        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
     }
 
     // Parse key
@@ -191,16 +192,17 @@ void castVote(int sock)
     }
 
     // Wait for confirmation
-    if ((n = read(sock, conBuffer, sizeof(conBuffer) - 1)) > 0)
+    if ((n = read(sock, conBuffer, sizeof(conBuffer) - 1)) < 0)
+    {
+        perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+        printf("\nVoting confirmation not received!\nWe can't be sure that your vote was cast\n");
+    }
+    else
     {
         conBuffer[n] = '\0';
         // Need to string compare to validate message
         printf("Bytes returned for confirmation: %d", n);
         printf("\n%s\n", conBuffer);
-    }
-    else
-    {
-        printf("\nVoting confirmation not received!\nWe can't be sure that your vote was cast\n");
     }
 }
 
@@ -220,17 +222,16 @@ void showSummary(int sock)
     // get response
     int n;
     char buffer[MAX_MESSAGE_LENGTH];
-    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
+    {
+        perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+    }
+    else
     {
         buffer[n] = '\0';
         printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
     }
-    else
-    {
-        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
-    }
-    // Could maybe send confirmation back to Server
 }
 
 void showCandidates(int sock)
@@ -249,22 +250,20 @@ void showCandidates(int sock)
     // get response
     int n;
     char buffer[MAX_MESSAGE_LENGTH];
-    if ((n = read(sock, buffer, sizeof(buffer) - 1)) > 0)
+    if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
+    {
+        perror("\nTIMEOUT ERROR: NO RESPONSE FROM INDIRECTION SERVER");
+    }
+    else
     {
         buffer[n] = '\0';
         printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
     }
-    else
-    {
-        printf("\nERROR: NO RESPONSE FROM INDIRECTION SERVER");
-    }
-    // Could maybe send confirmation back to Server
 }
 
 void voting(int sock)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
     cin.ignore();
     int running = 1;
     while (running)
@@ -332,6 +331,12 @@ int main()
         return -1;
     }
 
+    //Set timeout of 3s
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    setsockopt(localSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     printf("\nWaiting for connection\n");
     // Connection request
     if (connect(localSocket, (struct sockaddr *)&serverAddress, sizeof(struct sockaddr_in)) == -1)
@@ -347,9 +352,9 @@ int main()
     while (running)
     {
         // request user to select microservice
+        //cin.clear();
         printf("\n\nPlease type one of the following commands:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
         int input;
-        //cin.clear();
         cin >> input;
         printf("\nThe input is:\n%d\n", input);
         if (!isNums(to_string(input)))

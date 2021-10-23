@@ -147,9 +147,10 @@ void currency(int clientSocket, string currencyDat)
 
     memset(&servaddr, 0, sizeof(servaddr));
 
-    // Set timeout of 3s
+    //Set timeout of 3s
     struct timeval tv;
     tv.tv_sec = 3;
+    tv.tv_usec = 0;
     setsockopt(UDPsock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     // Filling server information
@@ -174,7 +175,7 @@ void currency(int clientSocket, string currencyDat)
                           MSG_WAITALL, (struct sockaddr *)&servaddr,
                           (socklen_t *)&len)) < 0)
         {
-            perror("\nError TIMEOUT");
+            perror("\nError UDP TIMEOUT");
             return;
         }
         buffer[n] = '\0';
@@ -224,9 +225,13 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("Encryption key request sent to UDP Voting service: %s\n", requestData.c_str());
 
     // 3: Receive encryption key from UDP service
-    n = recvfrom(UDPsock, (char *)keyBuffer, MAXLINE,
-                 MSG_WAITALL, (struct sockaddr *)&servaddr,
-                 (socklen_t *)&len);
+    if ((n = recvfrom(UDPsock, (char *)keyBuffer, MAXLINE,
+                      MSG_WAITALL, (struct sockaddr *)&servaddr,
+                      (socklen_t *)&len)) < 0)
+    {
+        perror("\nError TIMEOUT");
+        return;
+    }
     keyBuffer[n] = '\0';
     string voteKey(keyBuffer);
     printf("\ncastVote: Response from UDP Voting service get key:\n%s\n", keyBuffer);
@@ -259,9 +264,13 @@ void castVote(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("Encryption key request sent to UDP Voting service: %s\n", voteReq.c_str());
 
     // 7: Receive vote confirmation from UDP service
-    con = recvfrom(UDPsock, (char *)confBuffer, MAXLINE,
-                   MSG_WAITALL, (struct sockaddr *)&servaddr,
-                   (socklen_t *)&len);
+    if ((con = recvfrom(UDPsock, (char *)confBuffer, MAXLINE,
+                        MSG_WAITALL, (struct sockaddr *)&servaddr,
+                        (socklen_t *)&len)) < 0)
+    {
+        perror("\nError TIMEOUT");
+        return;
+    }
     confBuffer[con] = '\0';
     printf("castVote: Response from UDP Voting service:\n%s\n", confBuffer);
 
@@ -286,9 +295,13 @@ void showCandidates(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("Message sent to UDP Voting service: %s\n", requestData.c_str());
 
     // Get response from UDP service
-    n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
-                 MSG_WAITALL, (struct sockaddr *)&servaddr,
-                 (socklen_t *)&len);
+    if ((n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                      MSG_WAITALL, (struct sockaddr *)&servaddr,
+                      (socklen_t *)&len)) < 0)
+    {
+        perror("\nError TIMEOUT");
+        return;
+    }
     buffer[n] = '\0';
     printf("Response from UDP Voting service:\n%s\n", buffer);
 
@@ -314,9 +327,13 @@ void showSummary(int clientSocket, int UDPsock, struct sockaddr_in servaddr)
     printf("Message sent to UDP Voting service: %s\n", requestData.c_str());
 
     // Get response from UDP service
-    n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
-                 MSG_WAITALL, (struct sockaddr *)&servaddr,
-                 (socklen_t *)&len);
+    if ((n = recvfrom(UDPsock, (char *)buffer, MAXLINE,
+                      MSG_WAITALL, (struct sockaddr *)&servaddr,
+                      (socklen_t *)&len)) < 0)
+    {
+        perror("\nError TIMEOUT");
+        return;
+    }
     buffer[n] = '\0';
     printf("Response from UDP Voting service:\n%s\n", buffer);
 
@@ -342,6 +359,12 @@ void voting(int clientSocket, string votDat)
     }
 
     memset(&servaddr, 0, sizeof(servaddr));
+
+    //Set timeout of 3s
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    setsockopt(UDPsock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     // Filling server information
     servaddr.sin_family = AF_INET;
