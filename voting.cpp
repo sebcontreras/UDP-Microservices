@@ -13,7 +13,7 @@ using namespace std;
 #define PORT 6767
 #define MAXLINE 2048
 #define CAND_LENGTH 5
-#define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
+// #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
 const int canID[CAND_LENGTH] = {5678, 4444, 8981, 2442, 1298};
 const string canName[CAND_LENGTH] = {"Yuto", "Milton", "Shane", "Max", "Gifted"};
@@ -131,7 +131,7 @@ int main()
     while (1)
     {
         // Receive voting request from server
-        n = recvfrom(sockfd, (char *)buffer, MAXLINE,
+        n = recvfrom(sockfd, (char *)buffer, MAXLINE - 1,
                      MSG_WAITALL, (struct sockaddr *)&cliaddr,
                      (socklen_t *)&len);
         buffer[n] = '\0';
@@ -166,7 +166,7 @@ int main()
         {
             printf("\nSelected cast vote!\n");
             char tempData[n - 2];
-            strncpy(tempData, buffer + 2, 100);
+            strncpy(tempData, buffer + 2, n - 2);
             string data(tempData);
             resp = castVote(voteCount, data); //returns confirmation
             break;

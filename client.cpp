@@ -34,12 +34,10 @@ void translator(int sock)
         // get word
         string input;
         cin >> input;
-        printf("\nThe input is:\n%s\n", input.c_str());
 
         // Append input word to service key
         string mssg = "1 ";
         mssg.append(input);
-        printf("\nThe mssg: %s", mssg.c_str());
 
         // send SERVICE KEY + word to sock
         if (send(sock, mssg.c_str(), strlen(mssg.c_str()) + 1, 0) == -1)
@@ -47,7 +45,6 @@ void translator(int sock)
             printf("send() call failed\n");
             return;
         }
-        printf("\nInput sent to server\n\n........................\n\n");
 
         // if word is "exit"
         if (strncmp(input.c_str(), "exit", 4) == 0)
@@ -64,7 +61,6 @@ void translator(int sock)
         else
         {
             buffer[n] = '\0';
-            printf("Bytes returned: %d", n);
             printf("\nFrench translation: %s\n", buffer);
         }
     }
@@ -143,8 +139,6 @@ void castVote(int sock)
         return;
     }
 
-    printf("\nVoting request sent to server\n\n........................\n\n");
-
     // Receive encryption key
     int n;
     if ((n = read(sock, buffer, sizeof(buffer) - 1)) < 0)
@@ -155,7 +149,6 @@ void castVote(int sock)
     else
     {
         buffer[n] = '\0';
-        printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
     }
 
@@ -170,14 +163,11 @@ void castVote(int sock)
         printf("\nReceived encryption key was not an int...Please try again");
         return;
     }
-    printf("\ntempKey is: %s", tempKey);
     key = std::stoi(tempKey);
-    printf("\nThe key is: %d", key);
 
     // Encrypt vote
     int cryptVoteNum = voteID * key;
     string cryptVote = to_string(cryptVoteNum);
-    printf("\nThe encrypted vote is: %s", cryptVote.c_str());
 
     // Format cast vote request
     // We don't need the leading "3" here because we should already be in
@@ -201,8 +191,6 @@ void castVote(int sock)
     else
     {
         conBuffer[n] = '\0';
-        // Need to string compare to validate message
-        printf("Bytes returned for confirmation: %d", n);
         printf("\n%s\n", conBuffer);
     }
 }
@@ -230,7 +218,6 @@ void showSummary(int sock)
     else
     {
         buffer[n] = '\0';
-        printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
     }
 }
@@ -246,8 +233,6 @@ void showCandidates(int sock)
         return;
     }
 
-    printf("\nInput sent to server\n\n........................\n\n");
-
     // get response
     int n;
     char buffer[MAX_MESSAGE_LENGTH];
@@ -258,7 +243,6 @@ void showCandidates(int sock)
     else
     {
         buffer[n] = '\0';
-        printf("Bytes returned: %d", n);
         printf("\n%s\n", buffer);
     }
 }
@@ -270,7 +254,7 @@ void voting(int sock)
     while (running)
     {
         // Prompt user to select voting type
-        printf("\n\nPlease type one of the following commands:\n\n1. Show candidates\n\n2. Show voting summary\n\n3. Vote\n\n4. BYE\n\n");
+        printf("\n\nPlease type the number corresponding to your desired command:\n\n1. Show candidates\n\n2. Show voting summary\n\n3. Vote\n\n4. BYE\n\n");
         int input;
         //cin.clear();
         cin >> input;
@@ -317,24 +301,28 @@ void closeCon(int sock)
         printf("send() call failed\n");
         return;
     }
-
-    printf("\nInput sent to server\n\n........................\n\n");
 }
 
-int main()
+int main(int argc, char const *argv[])
 {
 
     struct sockaddr_in serverAddress;
     int localSocket;
-    //char output[1024];
 
     //get IP and PORT from command line
+    string IP = "0.0.0.0";
+
+    if (argc > 1)
+    {
+        string cl(argv[1]);
+        IP = cl;
+    }
 
     // serverAddress initialization
     memset(&serverAddress, 0, sizeof(serverAddress));
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, "0.0.0.0", &serverAddress.sin_addr) == -1)
+    if (inet_pton(AF_INET, IP.c_str(), &serverAddress.sin_addr) == -1)
     {
         printf("address creation failed\n");
         return -1;
@@ -359,7 +347,6 @@ int main()
         printf("connect() call failed\n");
         return -1;
     }
-    printf("Before while loop");
 
     //start while loop to check for input
     int running = 1;
@@ -368,7 +355,7 @@ int main()
     {
         // request user to select microservice
         //cin.clear();
-        printf("\n\nPlease type one of the following commands:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
+        printf("\n\nPlease type the number corresponding to your desired command:\n\n1. translator\n\n2. currency\n\n3. voting\n\n4. BYE\n\n");
         int input;
         cin >> input;
         printf("\nThe input is:\n%d\n", input);

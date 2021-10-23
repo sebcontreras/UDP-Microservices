@@ -10,10 +10,10 @@
 
 using namespace std;
 
-#define PORT 44111
+#define PORT 44123
 #define MAXLINE 1024
 #define TRANS_LENGTH 5
-#define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
+// #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
 const string translations[TRANS_LENGTH][2] = {{"hello", "bonjour"}, {"world", "monde"}, {"bye", "au revoir"}, {"yes", "oui"}, {"no", "non"}};
 
@@ -25,7 +25,6 @@ string getTranslation(string eWord)
         if (strncmp(eWord.c_str(), pair[0].c_str(), strlen(pair[0].c_str())) == 0)
         {
             fWord = pair[1];
-            printf("\nTranslation found!! %s in french is %s\n", eWord.c_str(), fWord.c_str());
             return fWord;
         }
     }
@@ -80,7 +79,6 @@ int main()
                      MSG_WAITALL, (struct sockaddr *)&cliaddr,
                      (socklen_t *)&len);
         buffer[n] = '\0';
-        printf("English word from client: %s\n", buffer);
 
         // Look for word match and return translation or error message
         string eWord(buffer);

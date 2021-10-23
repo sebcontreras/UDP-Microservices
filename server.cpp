@@ -23,7 +23,7 @@ using namespace std;
 #define CPORT 5454
 #define VPORT 6767
 #define MAXLINE 2048
-#define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
+// #define MSG_CONFIRM 0 // TEMP FOR USE ON MAC
 
 void sendToTCPclient(const char *buff, int buffLength, int &client_sock)
 {
@@ -505,7 +505,7 @@ int main(int argc, char const *argv[])
 
                 // Get data
                 char tempData[clientBytes - 2];
-                strncpy(tempData, bufferCopy + 2, MAXLINE - 1);
+                strncpy(tempData, bufferCopy + 2, clientBytes - 2);
                 string data(tempData);
                 printf("\nThe data is: %s", data.c_str());
                 printf("\nCalling trans function");
