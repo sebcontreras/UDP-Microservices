@@ -59,20 +59,16 @@ string castVote(int voteCount[], string data)
     string resp = "VOTE FAIL";
 
     // Get encrypted vote
-    printf("\nThe raw data is: %s", data.c_str());
     int endEn = data.find(" ");
     string encVoteStr = data.substr(0, endEn);
     int encVote = std::stoi(encVoteStr);
-    printf("\nThe encrypted vote is: %d", encVote);
 
     // Get key
     string keyStr = data.substr(endEn + 1, 1);
     int key = std::stoi(keyStr);
-    printf("\nThe key is: %d", key);
 
     // Decrypt vote
     int decVote = encVote / key;
-    printf("\nThe decVote is: %d", decVote);
 
     // Update voteCount
     for (int i = 0; i < CAND_LENGTH; i++)
@@ -80,7 +76,6 @@ string castVote(int voteCount[], string data)
         if (canID[i] == decVote)
         {
             voteCount[i]++;
-            printf("VoteCount: %d", voteCount[i]);
             resp = "VOTE SUCCESS!";
             printf("\nVote count updated!");
         }
@@ -135,16 +130,13 @@ int main()
                      MSG_WAITALL, (struct sockaddr *)&cliaddr,
                      (socklen_t *)&len);
         buffer[n] = '\0';
-        printf("Request from server: %s\n", buffer);
 
         // Get service ID
         int serv;
         char tempServ[2];
         strncpy(tempServ, buffer, 1);
         tempServ[1] = '\0';
-        printf("\ntempServ is: %s", tempServ);
         serv = std::stoi(tempServ);
-        printf("\nThe command is: %d", serv);
 
         // switch for determining which service to call
         string resp;
@@ -173,7 +165,6 @@ int main()
         }
         case 5:
             printf("\nSelected EXIT!\n");
-            //running = 0;
             break;
         default:
             printf("\nInvalid request....\n");
