@@ -66,5 +66,3 @@ TEST 4 - Local client and server, microservices over SSH:
 
  KNOWN BUGS:
 - client.cpp gets stuck in an infinite loop when selecting the desired service if you accidentally type a string instead of a number. If this happens, please just restart client.cpp and server.cpp
-
-- Voting looping
