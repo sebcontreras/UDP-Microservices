@@ -1,4 +1,4 @@
-# UDP Microservices by Sebastian Contreras, 30062418
+# UDP Microservices
 
 This is a Microservices application that uses client/socket programming over TCP and UDP. All mandatory funtionalities from the assignment description are working.
 
